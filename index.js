@@ -62,10 +62,3 @@ const server = http.createServer(async (req, res) => {
     }
 })
 
-server.listen(process.env.PORT || 3000, () => console.log('🚀 Servidor listo'))
-connectToWhatsApp()
-```
-
-Guardá, pusheá a GitHub y Railway lo va a redesployar. Después abrís:
-```
-https://turno-whatsapp-production.up.railway.app/qr
