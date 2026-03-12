@@ -1,3 +1,8 @@
+process.on('uncaughtException', (err) => {
+    console.error('ERROR:', err)
+    process.exit(1)
+})
+
 const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys')
 const qrcode = require('qrcode-terminal')
 const http = require('http')
