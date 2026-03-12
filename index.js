@@ -3,6 +3,7 @@ const qrcode = require('qrcode-terminal')
 const http = require('http')
 
 let sock
+let lastQR = ''
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info')
@@ -16,19 +17,31 @@ async function connectToWhatsApp() {
         const { connection, qr } = update
         
         if (qr) {
-            console.log('\n📱 Escaneá este QR:\n')
-            qrcode.generate(qr, { small: true })
+            lastQR = qr
+            console.log('QR actualizado, abrí /qr en el navegador')
         }
         if (connection === 'close') connectToWhatsApp()
-        if (connection === 'open') console.log('✅ WhatsApp conectado!')
+        if (connection === 'open') {
+            lastQR = ''
+            console.log('✅ WhatsApp conectado!')
+        }
     })
 
     sock.ev.on('creds.update', saveCreds)
 }
 
-// Servidor HTTP para recibir mensajes desde n8n
 const server = http.createServer(async (req, res) => {
-    if (req.method === 'POST' && req.url === '/send') {
+    if (req.url === '/qr') {
+        if (lastQR) {
+            res.writeHead(200, { 'Content-Type': 'text/html' })
+            res.end(`<html><body style="display:flex;justify-content:center;align-items:center;height:100vh;background:#000">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(lastQR)}" />
+                </body></html>`)
+        } else {
+            res.writeHead(200, { 'Content-Type': 'text/html' })
+            res.end('<html><body style="color:white;background:#000;display:flex;justify-content:center;align-items:center;height:100vh"><h1>✅ WhatsApp ya conectado!</h1></body></html>')
+        }
+    } else if (req.method === 'POST' && req.url === '/send') {
         let body = ''
         req.on('data', chunk => body += chunk)
         req.on('end', async () => {
@@ -49,5 +62,10 @@ const server = http.createServer(async (req, res) => {
     }
 })
 
-server.listen(3000, () => console.log('🚀 Servidor en puerto 3000'))
+server.listen(process.env.PORT || 3000, () => console.log('🚀 Servidor listo'))
 connectToWhatsApp()
+```
+
+Guardá, pusheá a GitHub y Railway lo va a redesployar. Después abrís:
+```
+https://turno-whatsapp-production.up.railway.app/qr
